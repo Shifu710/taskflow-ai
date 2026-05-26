@@ -1,0 +1,19 @@
+{
+  "name": "taskflow-ai",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspace apps/web",
+    "lint": "npm run lint --workspace apps/web",
+    "typecheck": "npm run typecheck --workspace apps/web",
+    "api:dev": "uvicorn app.main:app --reload --app-dir apps/api",
+    "api:test": "pytest apps/api/app/tests"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  }
+}

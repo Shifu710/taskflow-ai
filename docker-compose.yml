@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow
+      POSTGRES_DB: taskflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - taskflow_postgres:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+  api:
+    build:
+      context: ./apps/api
+    environment:
+      DATABASE_URL: postgresql+psycopg://taskflow:taskflow@postgres:5432/taskflow
+      REDIS_URL: redis://redis:6379/0
+      AI_PROVIDER: demo-local
+      TASKFLOW_WEBHOOK_SECRET: demo-webhook-secret
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+  web:
+    build:
+      context: ./apps/web
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+volumes:
+  taskflow_postgres:
