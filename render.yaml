@@ -19,7 +19,7 @@ services:
       - key: TASKFLOW_WEBHOOK_SECRET
         generateValue: true
       - key: FRONTEND_ORIGINS
-        value: https://taskflow-ai-seven-eosin.vercel.app
+        value: https://taskflow-ai-seven-eosin.vercel.app,https://taskflow-ai-shifu710s-projects.vercel.app
 
 databases:
   - name: taskflow-db
