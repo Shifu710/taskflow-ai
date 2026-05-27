@@ -69,6 +69,15 @@ Open `http://localhost:3000`.
 docker compose up --build
 ```
 
+## Database Migrations
+
+SQLite remains available for quick local demo mode, but PostgreSQL plus Alembic is the production data path.
+
+```bash
+cd services/api
+alembic upgrade head
+```
+
 ## Environment Variables
 
 Copy `.env.example` and set provider keys only on the backend. Missing AI keys use honest `demo-local` responses.
@@ -86,7 +95,7 @@ npm run build --workspace apps/web
 
 - Public demo uses seeded company/product data, not live web search.
 - External writes such as webhook sending, CRM notes, and task creation are simulated in demo mode.
-- Celery worker and Alembic migrations are planned hardening items; the current demo runtime executes synchronously to keep the portfolio flow reliable.
+- Celery worker is a planned hardening item; the current demo runtime executes synchronously to keep the portfolio flow reliable.
 - Langfuse is configuration-ready but does not send external traces until the optional tracing phase is implemented.
 
 ## Chinese Summary

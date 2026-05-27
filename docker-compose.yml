@@ -21,6 +21,7 @@ services:
       REDIS_URL: redis://redis:6379/0
       AI_PROVIDER: demo-local
       TASKFLOW_WEBHOOK_SECRET: demo-webhook-secret
+    command: sh -c "alembic -c alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     ports:
       - "8000:8000"
     depends_on:

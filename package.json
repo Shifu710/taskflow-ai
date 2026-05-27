@@ -12,7 +12,8 @@
     "typecheck": "npm run typecheck --workspace apps/web",
     "api:dev": "uvicorn app.main:app --reload --app-dir services/api",
     "api:test": "pytest services/api/app/tests",
-    "api:lint": "ruff check services/api/app --select F"
+    "api:lint": "ruff check services/api/app --select F",
+    "api:migrate": "cd services/api && alembic upgrade head"
   },
   "devDependencies": {
     "playwright": "^1.60.0"
