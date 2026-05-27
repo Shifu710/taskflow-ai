@@ -38,13 +38,31 @@ COMPETITOR_WORKFLOW = {
     ],
 }
 
+SUPPORT_TRIAGE_WORKFLOW = {
+    "name": "Customer Support Triage Agent",
+    "trigger": {"type": "manual"},
+    "steps": [
+        {"id": "plan", "type": "planner", "max_retries": 0},
+        {"id": "classify", "type": "agent", "agent": "support_classifier"},
+        {"id": "faq_lookup", "type": "tool_call", "tool": "demo_search", "max_retries": 1},
+        {"id": "draft_reply", "type": "tool_call", "tool": "email_draft_generator", "max_retries": 1},
+        {"id": "approval", "type": "approval", "message": "Approve the drafted support response?"},
+        {"id": "create_ticket", "type": "tool_call", "tool": "create_ticket_demo", "max_retries": 1},
+        {"id": "review", "type": "reviewer"},
+        {"id": "final", "type": "formatter"},
+    ],
+}
+
 
 def tool_schema(slug: str) -> tuple[dict, dict | None]:
     schemas = {
         "demo_search": ({"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query"]}, None),
         "company_profile_lookup": ({"type": "object", "properties": {"company": {"type": "string"}}, "required": ["company"]}, None),
         "calculator": ({"type": "object", "properties": {"expression": {"type": "string"}}, "required": ["expression"]}, None),
-        "csv_analyzer": ({"type": "object", "properties": {"rows": {"type": "array"}}, "required": ["rows"]}, None),
+        "email_draft_generator": ({"type": "object", "properties": {"payload": {"type": "object"}}, "required": ["payload"]}, None),
+        "create_ticket_demo": ({"type": "object", "properties": {"payload": {"type": "object"}}, "required": ["payload"]}, None),
+        "task_creator_demo": ({"type": "object", "properties": {"payload": {"type": "object"}}, "required": ["payload"]}, None),
+        "webhook_sender_demo": ({"type": "object", "properties": {"payload": {"type": "object"}}, "required": ["payload"]}, None),
     }
     return schemas.get(slug, ({"type": "object", "properties": {"payload": {"type": "object"}}, "required": ["payload"]}, None))
 
@@ -77,35 +95,27 @@ def seed_database(db: Session) -> None:
     db.add(workflow)
     db.add(WorkflowVersion(id=str(uuid.uuid4()), workflow_id=workflow.id, version=1, definition_json=COMPETITOR_WORKFLOW))
 
-    templates = [
-        ("wf_support_triage", "Customer Support Triage Agent", "Classifies support requests and drafts reviewed next actions."),
-        ("wf_weekly_ops", "Weekly Operations Summary Agent", "Aggregates metrics and creates a weekly operations brief."),
-        ("wf_csv_insight", "CSV Insight Agent", "Analyzes structured rows and produces summary insights."),
-        ("wf_meeting_tasks", "Meeting Notes to Tasks Agent", "Extracts decisions, owners, and follow-up tasks."),
-    ]
-    for workflow_id, name, description in templates:
-        db.add(Workflow(
-            id=workflow_id,
-            workspace_id=DEMO_WORKSPACE_ID,
-            name=name,
-            description=description,
-            status="template",
-            definition_json={"name": name, "trigger": {"type": "manual"}, "steps": [{"id": "start", "type": "planner"}, {"id": "final", "type": "formatter"}]},
-            version=1,
-            created_by=DEMO_USER_ID,
-        ))
+    support_workflow = Workflow(
+        id="wf_support_triage",
+        workspace_id=DEMO_WORKSPACE_ID,
+        name="Customer Support Triage Agent",
+        description="Classifies support requests, drafts a support reply, pauses for approval, and simulates ticket creation.",
+        status="published",
+        definition_json=SUPPORT_TRIAGE_WORKFLOW,
+        version=1,
+        created_by=DEMO_USER_ID,
+    )
+    db.add(support_workflow)
+    db.add(WorkflowVersion(id=str(uuid.uuid4()), workflow_id=support_workflow.id, version=1, definition_json=SUPPORT_TRIAGE_WORKFLOW))
 
     for slug in [
         "demo_search",
         "company_profile_lookup",
         "calculator",
-        "csv_analyzer",
-        "document_lookup_demo",
-        "http_request_demo",
-        "webhook_sender_demo",
         "email_draft_generator",
-        "crm_note_writer_demo",
+        "create_ticket_demo",
         "task_creator_demo",
+        "webhook_sender_demo",
     ]:
         input_schema, output_schema = tool_schema(slug)
         db.add(Tool(
@@ -118,7 +128,7 @@ def seed_database(db: Session) -> None:
             input_schema=input_schema,
             output_schema=output_schema,
             enabled=True,
-            requires_approval=slug in {"webhook_sender_demo", "crm_note_writer_demo", "task_creator_demo"},
+            requires_approval=slug in {"webhook_sender_demo", "create_ticket_demo", "task_creator_demo"},
             timeout_seconds=10,
             max_retries=1,
         ))

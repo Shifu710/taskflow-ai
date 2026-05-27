@@ -11,10 +11,10 @@ from app.api.deps import current_user
 from app.core.config import settings
 from app.db.seed import DEMO_WORKFLOW_ID, DEMO_WORKSPACE_ID
 from app.db.session import get_db
-from app.models.entities import AgentRun, AgentRunStep, Approval, Tool, ToolCall, UsageLog, User, WebhookEvent, Workflow, Workspace, WorkspaceMember
+from app.models.entities import AgentRun, AgentRunStep, Approval, Tool, ToolCall, UsageLog, User, WebhookEvent, Workflow, WorkflowVersion, Workspace, WorkspaceMember
 from app.runtime.engine import create_run, execute_until_pause_or_done
 from app.services.rbac import require_permission, role_for
-from app.services.security import create_token, verify_password
+from app.services.security import create_token, hash_password, verify_password
 from app.services.tool_gateway import invoke_tool, list_manifest
 
 router = APIRouter(prefix="/api/v1")
@@ -25,12 +25,26 @@ class LoginInput(BaseModel):
     password: str
 
 
+class RegisterInput(BaseModel):
+    email: str
+    password: str
+    name: str
+    workspace_name: str = "My TaskFlow Workspace"
+
+
 class RunInput(BaseModel):
     input: dict = {"query": "Research Bytebase and create a short outreach brief."}
 
 
 class DecisionInput(BaseModel):
     decision_note: str | None = None
+
+
+class WorkflowInput(BaseModel):
+    name: str
+    description: str = ""
+    definition_json: dict
+    status: str = "draft"
 
 
 @router.post("/auth/login")
@@ -40,6 +54,22 @@ def login(payload: LoginInput, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     memberships = db.query(WorkspaceMember).filter_by(user_id=user.id).all()
     return {"token": create_token(user.id), "user": {"id": user.id, "email": user.email, "name": user.name}, "workspaces": [{"id": item.workspace_id, "role": item.role} for item in memberships]}
+
+
+@router.post("/auth/register")
+def register(payload: RegisterInput, db: Session = Depends(get_db)):
+    if db.query(User).filter_by(email=payload.email).first():
+        raise HTTPException(status_code=409, detail="Email already registered")
+    user = User(id=str(uuid.uuid4()), email=payload.email, name=payload.name, password=hash_password(payload.password))
+    workspace = Workspace(id=str(uuid.uuid4()), name=payload.workspace_name, credits_balance=500)
+    member = WorkspaceMember(id=str(uuid.uuid4()), workspace_id=workspace.id, user_id=user.id, role="owner")
+    db.add_all([user, workspace, member])
+    db.commit()
+    return {
+        "token": create_token(user.id),
+        "user": {"id": user.id, "email": user.email, "name": user.name},
+        "workspaces": [{"id": workspace.id, "role": "owner"}],
+    }
 
 
 @router.post("/auth/guest")
@@ -83,6 +113,26 @@ def workflows(workspace_id: str, user: User = Depends(current_user), db: Session
     return {"workflows": [{"id": row.id, "name": row.name, "description": row.description, "status": row.status, "version": row.version, "definition_json": row.definition_json} for row in rows]}
 
 
+@router.post("/workspaces/{workspace_id}/workflows")
+def create_workflow(workspace_id: str, payload: WorkflowInput, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_permission(db, workspace_id, user.id, "create_workflow")
+    status = payload.status if payload.status in {"draft", "published", "archived"} else "draft"
+    workflow = Workflow(
+        id=str(uuid.uuid4()),
+        workspace_id=workspace_id,
+        name=payload.name,
+        description=payload.description,
+        status=status,
+        definition_json=payload.definition_json,
+        version=1,
+        created_by=user.id,
+    )
+    db.add(workflow)
+    db.add(WorkflowVersion(id=str(uuid.uuid4()), workflow_id=workflow.id, version=1, definition_json=workflow.definition_json))
+    db.commit()
+    return {"id": workflow.id, "name": workflow.name, "status": workflow.status, "version": workflow.version, "definition_json": workflow.definition_json}
+
+
 @router.get("/workspaces/{workspace_id}/workflows/{workflow_id}")
 def workflow_detail(workspace_id: str, workflow_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
     require_permission(db, workspace_id, user.id, "view_workflows")
@@ -90,6 +140,46 @@ def workflow_detail(workspace_id: str, workflow_id: str, user: User = Depends(cu
     if not row:
         raise HTTPException(status_code=404, detail="Workflow not found")
     return {"id": row.id, "name": row.name, "description": row.description, "status": row.status, "version": row.version, "definition_json": row.definition_json, "guest_read_only": role_for(db, workspace_id, user.id) == "guest"}
+
+
+@router.patch("/workspaces/{workspace_id}/workflows/{workflow_id}")
+def update_workflow(workspace_id: str, workflow_id: str, payload: WorkflowInput, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_permission(db, workspace_id, user.id, "edit_workflow")
+    workflow = db.query(Workflow).filter_by(workspace_id=workspace_id, id=workflow_id).first()
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    workflow.name = payload.name
+    workflow.description = payload.description
+    workflow.definition_json = payload.definition_json
+    workflow.status = payload.status if payload.status in {"draft", "published", "archived"} else workflow.status
+    workflow.version += 1
+    workflow.updated_at = datetime.utcnow()
+    db.add(WorkflowVersion(id=str(uuid.uuid4()), workflow_id=workflow.id, version=workflow.version, definition_json=workflow.definition_json))
+    db.commit()
+    return {"id": workflow.id, "name": workflow.name, "status": workflow.status, "version": workflow.version, "definition_json": workflow.definition_json}
+
+
+@router.post("/workspaces/{workspace_id}/workflows/{workflow_id}/publish")
+def publish_workflow(workspace_id: str, workflow_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_permission(db, workspace_id, user.id, "edit_workflow")
+    workflow = db.query(Workflow).filter_by(workspace_id=workspace_id, id=workflow_id).first()
+    if not workflow:
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    workflow.status = "published"
+    workflow.version += 1
+    workflow.updated_at = datetime.utcnow()
+    db.add(WorkflowVersion(id=str(uuid.uuid4()), workflow_id=workflow.id, version=workflow.version, definition_json=workflow.definition_json))
+    db.commit()
+    return {"id": workflow.id, "status": workflow.status, "version": workflow.version}
+
+
+@router.get("/workspaces/{workspace_id}/workflows/{workflow_id}/versions")
+def workflow_versions(workspace_id: str, workflow_id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
+    require_permission(db, workspace_id, user.id, "view_workflows")
+    if not db.query(Workflow).filter_by(workspace_id=workspace_id, id=workflow_id).first():
+        raise HTTPException(status_code=404, detail="Workflow not found")
+    rows = db.query(WorkflowVersion).filter_by(workflow_id=workflow_id).order_by(WorkflowVersion.version.desc()).all()
+    return {"versions": [{"id": row.id, "version": row.version, "definition_json": row.definition_json, "created_at": row.created_at} for row in rows]}
 
 
 @router.post("/workspaces/{workspace_id}/workflows/{workflow_id}/runs")
@@ -204,8 +294,13 @@ def mcp_tools(workspace_id: str, user: User = Depends(current_user), db: Session
 @router.post("/workspaces/{workspace_id}/mcp/tools/{tool_slug}/invoke")
 def mcp_invoke(workspace_id: str, tool_slug: str, payload: dict, user: User = Depends(current_user), db: Session = Depends(get_db)):
     role = require_permission(db, workspace_id, user.id, "run_workflow")
-    if role == "guest" and tool_slug not in {"demo_search", "company_profile_lookup", "calculator", "csv_analyzer"}:
+    tool = db.query(Tool).filter_by(workspace_id=workspace_id, slug=tool_slug, enabled=True).first()
+    if not tool:
+        raise HTTPException(status_code=404, detail="Tool not found")
+    if role == "guest" and tool_slug not in {"demo_search", "company_profile_lookup", "calculator", "email_draft_generator"}:
         raise HTTPException(status_code=403, detail="Guest cannot invoke this tool")
+    if tool.requires_approval:
+        raise HTTPException(status_code=403, detail="Tool requires a workflow approval gate before invocation")
     try:
         return invoke_tool(db, workspace_id, tool_slug, payload)
     except ValueError as exc:

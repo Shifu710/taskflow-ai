@@ -11,8 +11,9 @@ from app.tools.demo_tools import TOOL_FUNCTIONS
 def list_manifest(db: Session, workspace_id: str, guest_safe: bool = False) -> dict:
     tools = db.query(Tool).filter_by(workspace_id=workspace_id, enabled=True).all()
     safe_tools = []
+    guest_allowed = {"demo_search", "company_profile_lookup", "calculator", "email_draft_generator"}
     for tool in tools:
-        if guest_safe and tool.slug not in {"demo_search", "company_profile_lookup", "calculator", "csv_analyzer", "email_draft_generator", "task_creator_demo", "webhook_sender_demo"}:
+        if guest_safe and tool.slug not in guest_allowed:
             continue
         safe_tools.append({"name": tool.slug, "description": tool.description, "input_schema": tool.input_schema})
     return {"tools": safe_tools}

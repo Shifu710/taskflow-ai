@@ -65,6 +65,7 @@ TOOL_FUNCTIONS = {
     "http_request_demo": passthrough_demo,
     "webhook_sender_demo": passthrough_demo,
     "email_draft_generator": passthrough_demo,
+    "create_ticket_demo": passthrough_demo,
     "crm_note_writer_demo": passthrough_demo,
     "task_creator_demo": passthrough_demo,
 }
