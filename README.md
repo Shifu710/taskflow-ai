@@ -2,17 +2,19 @@
 
 TaskFlow AI is a flagship-level MVP for AI Agent workflow automation: designing, running, approving, monitoring, and auditing multi-step AI workflows.
 
-It currently demonstrates executable workflows, tool calling, approval pause/resume, live trace, usage logs, credit deduction, replay, and an AgentOps dashboard. Alembic migrations and a Docker Celery/Redis path exist. The frontend is deployed on Vercel; the permanent Render + managed PostgreSQL backend is one dashboard step away via the blueprint below.
+It currently demonstrates executable workflows, tool calling, approval pause/resume, live trace, usage logs, credit deduction, replay, and an AgentOps dashboard. Alembic migrations and a Docker Celery/Redis path exist. The frontend is deployed on Vercel and the FastAPI backend is deployed on Render with managed PostgreSQL.
 
 ## Live Demo
 
 - Frontend: https://taskflow-ai-seven-eosin.vercel.app
+- Backend API: https://taskflow-ai-api.onrender.com
 - Try Guest Demo from the homepage (uses `demo-local` AI and seeded research data).
-- Permanent API: deploy the backend with Render (managed PostgreSQL included):
+
+To redeploy from scratch, use the Render blueprint (managed PostgreSQL included):
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Shifu710/taskflow-ai)
 
-After Render is live, set Vercel `NEXT_PUBLIC_API_BASE_URL` to `https://<your-render-service>/api/v1` and redeploy.
+Set Vercel `NEXT_PUBLIC_API_BASE_URL` to `https://taskflow-ai-api.onrender.com/api/v1` (or your Render service URL + `/api/v1`).
 
 ## Demo Accounts
 
@@ -40,7 +42,7 @@ The **Try Guest Demo** button signs in automatically. No private AI provider key
 - Simulated writes: external write tools such as webhook sending, CRM notes, and task creation are simulated in public demo mode.
 - Gateway scope: the project implements an MCP-style internal gateway, not a full external MCP server/client.
 - Database scope: SQLite is a quick-demo mode; PostgreSQL plus Alembic migrations are the production data path.
-- Still upgrading: permanent Render backend + managed PostgreSQL (blueprint ready), active scheduled trigger execution, and real Langfuse trace sending.
+- Still upgrading: active scheduled trigger execution and real Langfuse trace sending.
 
 ## Architecture
 
@@ -116,7 +118,7 @@ npm run build --workspace apps/web
 - External writes such as webhook sending, CRM notes, and task creation are simulated in demo mode.
 - Celery/Redis worker mode is wired for Docker deployments. Local quick-demo mode executes synchronously unless `TASKFLOW_USE_CELERY=true`.
 - Langfuse is configuration-ready but does not send external traces until the optional tracing phase is implemented.
-- Vercel frontend is live; managed PostgreSQL on Render is pending one-time blueprint apply (see Live Demo).
+- Production demo runs on Render + Render PostgreSQL with synchronous execution (`TASKFLOW_USE_CELERY=false`).
 - Scheduled triggers are schema/API-level and are not an active production scheduler yet.
 
 ## Chinese Summary
