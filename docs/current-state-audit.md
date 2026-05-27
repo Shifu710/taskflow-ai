@@ -2,7 +2,13 @@
 
 Date: 2026-05-27
 
-Source of truth: `C:/Users/Gamal/Downloads/taskflow-ai-master-build-prompt-for-codex.md`
+Source of truth: `C:/Users/Gamal/Downloads/TaskFlow_AI_Final_Deployment_Completion_Prompt.md`
+
+## Current Git State
+
+- Branch: `main`
+- Latest commit before this audit refresh: `51e452a docs: update production qa checklist`
+- Remote: `https://github.com/Shifu710/taskflow-ai.git`
 
 ## Current Files
 
@@ -10,9 +16,10 @@ Top-level structure currently present:
 
 ```txt
 .github/workflows/ci.yml
-apps/api
 apps/web
+services/api
 docs/architecture.md
+docs/current-state-audit.md
 docs/demo-script.md
 docs/production-qa.md
 docker-compose.yml
@@ -21,11 +28,11 @@ package.json
 README.md
 ```
 
-Important note: the current backend lives in `apps/api`, but the master prompt requires `services/api`. This should be fixed early so the repository matches the requested flagship structure.
+The repository now matches the required `apps/web` plus `services/api` shape.
 
 ## Current Frontend Stack
 
-Current frontend implementation:
+Implemented:
 
 - Next.js App Router in `apps/web`
 - TypeScript
@@ -34,89 +41,86 @@ Current frontend implementation:
 - Recharts
 - Zod
 - Lucide icons
-- Client-side API helper in `apps/web/lib/api.ts`
+- SSE client on the run detail page
+- Visible routes required by the prompt
 
-Missing or incomplete compared with the master prompt:
+Not implemented or intentionally light:
 
-- TanStack Query is not installed or used.
-- React Hook Form is not installed or used.
-- shadcn/ui package scaffolding is not present, though the UI has local reusable styling.
-- Workflow builder editing is still thin. The current detail page visualizes workflow data, but the full save draft, publish, node config, version history, and validation workflow needs hardening.
+- TanStack Query is not installed.
+- React Hook Form is not installed.
+- shadcn/ui package scaffolding is not installed, although the app has local reusable UI styles.
+
+These are not deployment blockers for the final public demo because the current frontend flow works locally.
 
 ## Current Backend Stack
 
-Current backend implementation:
+Implemented:
 
-- FastAPI in `apps/api`
+- FastAPI in `services/api`
 - Pydantic
-- SQLAlchemy 2.x models
-- SQLite quick-demo default through `DATABASE_URL`
-- PostgreSQL Docker Compose path through `postgresql+psycopg`
+- SQLAlchemy 2.x
+- Alembic initial migration
+- SQLite quick-demo mode
+- PostgreSQL path through `DATABASE_URL`
+- Redis URL configuration
+- Celery worker mode for Docker
+- Synchronous execution fallback for local and first public demo stability
+- JWT-style auth
+- RBAC helpers
 - JSON schema validation for tools
-- JWT-style auth utilities
-- LangGraph dependency present and used by `apps/api/app/runtime/engine.py`
+- LangGraph runtime
+- Ruff backend lint command in CI
 
-Missing or incomplete compared with the master prompt:
+Not fully production-verified yet:
 
-- Alembic is not implemented.
-- Backend directory is not yet `services/api`.
-- Redis exists in Docker Compose but is not deeply used.
-- Celery is not installed or wired.
-- Ruff/backend lint command is not configured.
-- Active scheduled trigger execution is not implemented.
+- Managed PostgreSQL deployment
+- Production Redis/Celery worker execution
+- Active scheduled trigger execution
+- Real Langfuse trace sending
 
 ## Whether App Runs
 
-Frontend checks from this audit:
+Last known local checks passed:
 
-- `npm.cmd run typecheck --workspace apps/web` passed.
-- `npm.cmd run lint --workspace apps/web` passed.
-- `npm.cmd run build --workspace apps/web` passed.
-- Next.js build generated all required visible routes, including `/workspaces/[workspaceId]/runs/[runId]` and `/technical-review`.
+- `npm.cmd run typecheck --workspace apps/web`
+- `npm.cmd run lint --workspace apps/web`
+- `npm.cmd run build --workspace apps/web`
+- bundled Python `-m ruff check services/api/app --select F`
+- bundled Python `-m pytest services/api/app/tests`
+- bundled Python `-m alembic -c services/api/alembic.ini upgrade head`
 
-Backend checks from this audit:
-
-- `pytest apps/api/app/tests` could not run because `pytest` is not installed on the shell path.
-- `python -m pytest apps/api/app/tests` could not run because `python` is not available on the shell path.
-- `py -m pytest apps/api/app/tests` could not run because `py` is not available on the shell path.
-
-This does not prove backend tests are broken. It means the current Windows shell does not expose a Python executable. Backend tests must be rerun through Docker, a local Python install, or a bundled Python runtime in the next phase.
+Docker Compose was not verified previously because Docker was not available on PATH in the local shell.
 
 ## Whether Auth Exists
 
-Auth exists in the backend:
+Auth exists:
 
 - `POST /api/v1/auth/login`
 - `POST /api/v1/auth/guest`
+- `POST /api/v1/auth/register`
 - JWT creation and current-user dependency
 - Seeded users:
   - `guest@taskflow.ai / guest123`
   - `demo@taskflow.ai / demo12345`
 
-Missing or incomplete:
-
-- Register route is not implemented in the API, although `/register` exists in the frontend.
-- Logout is handled client-side at most, not as a backend session invalidation flow.
-- Session/JWT behavior is demo-grade and should be documented as such.
+Session behavior is still demo-grade JWT without server-side invalidation.
 
 ## Whether Workspace Exists
 
 Workspace support exists:
 
-- `Workspace` and `WorkspaceMember` models
+- `Workspace` model
+- `WorkspaceMember` model
 - `TaskFlow Demo Workspace` seeded as `ws_demo`
 - Workspace list API
 - Workspace dashboard route and page
-- RBAC roles are represented through `WorkspaceMember.role`
+- Roles: owner, admin, operator, viewer, guest
 
-Missing or incomplete:
-
-- Workspace member management page/API is not implemented.
-- Full RBAC coverage needs to be verified after the structure refactor.
+Full workspace member management UI is not implemented.
 
 ## Whether Workflow Pages Exist
 
-Frontend routes currently exist:
+Frontend routes exist:
 
 - `/`
 - `/login`
@@ -135,38 +139,45 @@ Frontend routes currently exist:
 - `/workspaces/[workspaceId]/usage`
 - `/workspaces/[workspaceId]/settings`
 
-Backend workflow endpoints currently exist for listing, detail, run creation, webhook trigger, run list, run detail, replay, approvals, tools, MCP-style tool manifest, MCP-style invocation, and usage.
+Workflow APIs exist for:
 
-Missing or incomplete:
+- list
+- detail
+- create draft
+- update
+- publish
+- version history
+- run
+- replay
+- webhook trigger
 
-- `POST /workflows` create draft API is missing.
-- Save draft / publish / archive APIs are missing.
-- Version history API is not complete.
-- The master prompt says to start with only two templates. Current seed data includes more than two template workflows.
+Seeded workflows are now limited to the required two templates:
+
+1. Competitor Research & Outreach Agent
+2. Customer Support Triage Agent
 
 ## Whether Backend Exists
 
-Yes. Backend exists and includes:
+Yes. Backend exists in `services/api` and includes:
 
 - FastAPI app startup
-- Database models
-- Seed data
-- Auth routes
-- Workspace routes
-- Workflow routes
-- Run routes
-- Approval routes
-- Tool registry routes
+- `/health`
+- auth routes
+- workspace routes
+- workflow routes
+- run routes
+- approval routes
+- tool registry routes
 - MCP-style gateway routes
-- Usage routes
-- Webhook route
-- Tests under `apps/api/app/tests`
-
-Main gap: location should be migrated from `apps/api` to `services/api`.
+- usage routes
+- webhook route
+- Alembic migration files
+- Celery worker entrypoint
+- tests under `services/api/app/tests`
 
 ## Whether LangGraph Exists
 
-Yes. LangGraph is imported and `StateGraph` is compiled in `apps/api/app/runtime/engine.py`.
+Yes. LangGraph is used in `services/api/app/runtime/engine.py`.
 
 Current graph nodes:
 
@@ -183,13 +194,11 @@ Current graph nodes:
 - `finalize`
 - `error_handler`
 
-The nodes are meaningful, persist steps, mutate state, route conditionally, call tools, pause on approval, resume after approval, and finalize or fail runs.
+The nodes persist steps, mutate state, route conditionally, call tools, pause on approval, resume after approval, and finalize or fail runs.
 
-Remaining concerns:
+Remaining limitation:
 
-- Execution is synchronous; Celery/Redis are not yet the production execution path.
-- State is reconstructed from the database on resume rather than using LangGraph checkpoint storage.
-- Timeout handling is mostly represented by limits fields, not active cancellation.
+- State is reconstructed from persisted database records on resume rather than using a dedicated LangGraph checkpoint store.
 
 ## Whether Tool Calling Exists
 
@@ -197,19 +206,23 @@ Yes. Tool calling exists through:
 
 - `Tool` model
 - `ToolCall` model
-- Tool seed data
-- `app/services/tool_gateway.py`
-- `app/tools/demo_tools.py`
-- JSON schema validation with `jsonschema`
-- Tool call logs and usage logs
+- `services/api/app/services/tool_gateway.py`
+- `services/api/app/tools/demo_tools.py`
+- JSON schema validation
+- tool call logs
+- usage logs
 
-Current seed tools include required tools plus extra tools:
+Seeded tools now match the required public-demo registry:
 
-- Required present: `demo_search`, `company_profile_lookup`, `calculator`, `email_draft_generator`, `webhook_sender_demo`, `task_creator_demo`
-- Required missing by exact slug: `create_ticket_demo`
-- Extra present: `csv_analyzer`, `document_lookup_demo`, `http_request_demo`, `crm_note_writer_demo`
+- `demo_search`
+- `company_profile_lookup`
+- `calculator`
+- `email_draft_generator`
+- `create_ticket_demo`
+- `task_creator_demo`
+- `webhook_sender_demo`
 
-The master prompt requires starting with the exact seeded tools and two templates, so the seed data needs cleanup.
+External write tools remain simulated in public demo mode.
 
 ## Whether Approval Flow Exists
 
@@ -217,73 +230,63 @@ Yes. Approval flow exists:
 
 - `Approval` model
 - approval list page
-- approve/reject endpoints
+- approve endpoint
+- reject endpoint
 - LangGraph `approval_gate` creates a pending approval
 - run status becomes `waiting_for_approval`
 - approval resumes the same `run_id`
-- rejection routes to `error_handler`
+- rejection routes to failure
 
-Missing or incomplete:
-
-- Expiration/cancelled handling is modeled but not active.
-- Approval usage logs should be strengthened.
+Expiration/cancelled approval handling is modeled but not active.
 
 ## Whether Live Execution Trace Exists
 
-Yes, a minimum SSE trace exists:
+Yes. A minimum SSE trace exists:
 
 - `GET /api/v1/workspaces/{workspace_id}/runs/{run_id}/events/stream`
-- Run detail page can display run, steps, tool calls, approvals, status, final output, credits, tokens, and trace ID.
+- Run detail page shows run status, steps, tool calls, approval card, final output, credits used, tokens, latency, and trace ID.
 
-Missing or incomplete:
-
-- Current SSE event name is mostly `run_update`, not the full event taxonomy required by the prompt (`run_started`, `step_started`, `tool_call_started`, etc.).
-- Graph progress is present through persisted steps, but event typing should be upgraded.
+Current SSE event is mostly `run_update`, not the full event taxonomy listed in the larger product roadmap.
 
 ## Whether Deployment Exists
 
 Deployment assets exist:
 
-- `docker-compose.yml`
+- Docker Compose
 - frontend Dockerfile
 - backend Dockerfile
 - GitHub Actions CI
-- public GitHub repo exists
+- public GitHub repository
 
-Missing or incomplete:
+Still missing:
 
-- TaskFlow AI is not yet visible as a Vercel project.
-- Production deployment URL is not set.
-- Backend hosting is not completed.
-- Production QA doc exists but must be regenerated after a real live deployment.
+- verified public frontend deployment
+- verified public FastAPI backend deployment
+- managed PostgreSQL connection
+- production migration/seed verification
+- live 22-step production QA result
 
-## What Is Missing
+## What Is Missing For Flagship Complete
 
-Highest priority gaps against the master prompt:
+The remaining work is deployment and production verification, not new feature development:
 
-1. Repository structure mismatch: backend must move from `apps/api` to `services/api`.
-2. Register API and complete auth/session behavior.
-3. Workflow create/save/publish/version endpoints.
-4. Seed data must be limited to the two required templates.
-5. Tool seed list must match the required registry, including `create_ticket_demo`.
-6. Alembic migrations and production PostgreSQL-first path.
-7. Celery + Redis worker execution path.
-8. TanStack Query, React Hook Form, and shadcn/ui alignment.
-9. More explicit SSE event taxonomy.
-10. ModelGateway currently has demo-local and placeholder provider behavior; DeepSeek/Qwen/OpenAI-compatible calls need real server-side implementation.
-11. Langfuse external trace sending is not implemented.
-12. Scheduled trigger execution is not active.
-13. GitHub Actions needs backend lint/ruff.
-14. TaskFlow AI itself is not deployed as a live project.
+1. Run local regression checks.
+2. Verify Docker if Docker is available; otherwise document that it is unavailable.
+3. Deploy backend with managed PostgreSQL.
+4. Deploy frontend with `NEXT_PUBLIC_API_BASE_URL` pointing to the hosted backend.
+5. Run Alembic migration against production database.
+6. Verify seed data in production.
+7. Run the full public 22-step demo flow.
+8. Update `README.md`, `docs/production-qa.md`, `docs/architecture.md`, and Technical Review with live URLs and honest limitations.
+9. Update portfolio only after live demo passes.
 
 ## Recommended Next Step
 
-Continue with Phase 1 and Phase 2 in a narrow, testable order:
+Run the local checks, then deploy the public demo using synchronous backend execution first:
 
-1. Migrate backend from `apps/api` to `services/api` and update scripts, Docker, CI, docs, and imports.
-2. Add missing backend commands and make Python test execution reproducible, preferably through Docker if local Python is unavailable.
-3. Add the missing register route and tighten auth/workspace/RBAC behavior.
-4. Clean seed workflows and tools to match the required two-template, seven-tool scope.
-5. Add workflow draft/create/publish/version endpoints before polishing the builder UI.
+```txt
+TASKFLOW_USE_CELERY=false
+AI_PROVIDER=demo-local
+```
 
-Do not call the project complete until the live demo flow in the master prompt works end to end on a deployed URL.
+This keeps the first public portfolio demo stable while Redis/Celery production mode remains available but optional.
