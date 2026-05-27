@@ -17,4 +17,4 @@ flowchart LR
 
 The public demo target is `demo-local` model responses with seeded business data. Runtime state, approvals, tool calls, usage logs, and credit transactions persist through SQLAlchemy. SQLite is the quick-demo path; PostgreSQL with Alembic is the intended production data path.
 
-Deployment status: local verification is passing, but the public frontend plus hosted FastAPI backend plus managed PostgreSQL demo has not been verified yet.
+Deployment status: Vercel frontend is live at https://taskflow-ai-seven-eosin.vercel.app. End-to-end public QA passed on the frontend with an interim API tunnel during deployment work. Permanent hosting uses `render.yaml` (FastAPI Docker + Render managed PostgreSQL). Apply the Render blueprint, then point `NEXT_PUBLIC_API_BASE_URL` at `https://<render-service>/api/v1`.
