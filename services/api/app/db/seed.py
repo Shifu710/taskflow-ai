@@ -112,6 +112,7 @@ def seed_database(db: Session) -> None:
     )
     db.add(support_workflow)
     db.add(WorkflowVersion(id=str(uuid.uuid4()), workflow_id=support_workflow.id, version=1, definition_json=SUPPORT_TRIAGE_WORKFLOW))
+    db.flush()
 
     for slug in [
         "demo_search",
@@ -137,6 +138,7 @@ def seed_database(db: Session) -> None:
             timeout_seconds=10,
             max_retries=1,
         ))
+    db.flush()
 
     completed = AgentRun(
         id="run_completed_seed",
