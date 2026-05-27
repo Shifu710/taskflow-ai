@@ -4,7 +4,7 @@
 - Deployment URL: Not deployed yet
 - Local QA URL: `http://127.0.0.1:3000`
 - API URL: `http://127.0.0.1:8000`
-- Commit SHA tested locally: `04c6b0d` plus local production-readiness changes pending commit
+- Commit SHA tested locally: `75e11bd`
 
 ## Routes Tested Locally
 
