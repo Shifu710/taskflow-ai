@@ -22,7 +22,8 @@ app.include_router(router)
 
 @app.on_event("startup")
 def startup() -> None:
-    Base.metadata.create_all(bind=engine)
+    if settings.database_url.startswith("sqlite"):
+        Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         seed_database(db)
