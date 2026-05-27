@@ -85,6 +85,7 @@ def seed_database(db: Session) -> None:
         WorkspaceMember(id=str(uuid.uuid4()), workspace_id=DEMO_WORKSPACE_ID, user_id=GUEST_USER_ID, role="guest"),
         WorkspaceMember(id=str(uuid.uuid4()), workspace_id=DEMO_WORKSPACE_ID, user_id=DEMO_USER_ID, role="owner"),
     ])
+    db.flush()
 
     workflow = Workflow(
         id=DEMO_WORKFLOW_ID,
