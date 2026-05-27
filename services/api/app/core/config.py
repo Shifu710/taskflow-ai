@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     langfuse_public_key: str | None = None
     langfuse_secret_key: str | None = None
     langfuse_host: str | None = None
+    frontend_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     class Config:
         env_prefix = ""

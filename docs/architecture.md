@@ -15,4 +15,6 @@ flowchart LR
   API --> Langfuse[Langfuse-ready optional tracing]
 ```
 
-The public demo uses `demo-local` model responses and seeded business data. Runtime state, approvals, tool calls, usage logs, and credit transactions are persisted locally.
+The public demo target is `demo-local` model responses with seeded business data. Runtime state, approvals, tool calls, usage logs, and credit transactions persist through SQLAlchemy. SQLite is the quick-demo path; PostgreSQL with Alembic is the intended production data path.
+
+Deployment status: local verification is passing, but the public frontend plus hosted FastAPI backend plus managed PostgreSQL demo has not been verified yet.

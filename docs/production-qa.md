@@ -4,7 +4,7 @@
 - Deployment URL: Not deployed yet
 - Local QA URL: `http://127.0.0.1:3000`
 - API URL: `http://127.0.0.1:8000`
-- Commit SHA tested locally: `5fb8f30`
+- Commit SHA tested locally: `04c6b0d` plus local production-readiness changes pending commit
 
 ## Routes Tested Locally
 
@@ -52,11 +52,15 @@ C:\Users\Gamal\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\p
 cd services/api && C:\Users\Gamal\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe -m alembic -c alembic.ini upgrade head
 ```
 
+Docker Compose was not verified in this local environment because Docker was not available on PATH. Equivalent local checks were run with npm, pytest, ruff, and alembic.
+
 ## Known Issues
 
 - Production deployment is still pending.
+- Public hosted backend, managed PostgreSQL, production migration, and production seed verification are still pending.
 - Public demo uses seeded demo data, not live web search.
 - External write tools are simulated in public demo mode.
 - Celery/Redis worker mode is wired for Docker, while local quick-demo mode defaults to synchronous execution.
+- Redis/Celery production mode has not been verified.
 - Langfuse trace sending is not implemented yet; local trace IDs and structured run logs are available.
 - Scheduled trigger schema exists, but active background schedule execution is not production-hardened yet.

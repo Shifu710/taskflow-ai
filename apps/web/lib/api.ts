@@ -1,4 +1,9 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const serviceApiBase = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
+  : undefined;
+
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? serviceApiBase ?? "http://localhost:8000/api/v1";
 export const DEMO_WORKSPACE_ID = "ws_demo";
 export const DEMO_WORKFLOW_ID = "wf_competitor";
 

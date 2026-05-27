@@ -2,7 +2,7 @@
 
 TaskFlow AI is a flagship-level MVP for AI Agent workflow automation: designing, running, approving, monitoring, and auditing multi-step AI workflows.
 
-It currently demonstrates executable workflows, tool calling, approval pause/resume, live trace, usage logs, credit deduction, replay, and an AgentOps dashboard. Some production infrastructure features such as Alembic migrations, Celery/Redis async workers, active scheduled triggers, editable workflow publishing, and real Langfuse tracing are still being upgraded.
+It currently demonstrates executable workflows, tool calling, approval pause/resume, live trace, usage logs, credit deduction, replay, and an AgentOps dashboard. Alembic migrations and a Docker Celery/Redis path exist, while public deployment, managed PostgreSQL verification, active scheduled triggers, and real Langfuse trace sending still need production verification.
 
 ## Demo Accounts
 
@@ -20,7 +20,7 @@ The **Try Guest Demo** button signs in automatically. No private AI provider key
 | Runtime | LangGraph state graph, ModelGateway demo-local fallback |
 | Tools | Tool registry, JSON schema validation, MCP-style gateway |
 | Observability | SSE live trace, usage logs, tool logs, credit transactions, Langfuse-ready config |
-| Deployment | Docker Compose, Vercel-ready frontend, hosted FastAPI-ready backend |
+| Deployment | Docker Compose, Vercel-ready frontend, hosted FastAPI-ready backend, PostgreSQL-ready data layer |
 
 ## Real vs Demo Scope
 
@@ -29,8 +29,8 @@ The **Try Guest Demo** button signs in automatically. No private AI provider key
 - Seeded data: `demo_search` uses seeded demo search data, not live web search.
 - Simulated writes: external write tools such as webhook sending, CRM notes, and task creation are simulated in public demo mode.
 - Gateway scope: the project implements an MCP-style internal gateway, not a full external MCP server/client.
-- Database scope: SQLite is a quick-demo mode; PostgreSQL plus Alembic migrations are planned production hardening work.
-- Still upgrading: Celery/Redis async workers, active scheduled triggers, editable workflow publishing, and real Langfuse trace sending.
+- Database scope: SQLite is a quick-demo mode; PostgreSQL plus Alembic migrations are the production data path.
+- Still upgrading: public production deployment, managed PostgreSQL verification, active scheduled trigger execution, and real Langfuse trace sending.
 
 ## Architecture
 
@@ -84,6 +84,13 @@ alembic upgrade head
 
 Copy `.env.example` and set provider keys only on the backend. Missing AI keys use honest `demo-local` responses.
 
+For a deployed frontend/backend split, set:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=https://<backend-domain>/api/v1
+FRONTEND_ORIGINS=https://<frontend-domain>
+```
+
 ## Testing
 
 ```bash
@@ -99,6 +106,8 @@ npm run build --workspace apps/web
 - External writes such as webhook sending, CRM notes, and task creation are simulated in demo mode.
 - Celery/Redis worker mode is wired for Docker deployments. Local quick-demo mode executes synchronously unless `TASKFLOW_USE_CELERY=true`.
 - Langfuse is configuration-ready but does not send external traces until the optional tracing phase is implemented.
+- Public frontend plus hosted FastAPI backend plus managed PostgreSQL deployment has not been verified yet.
+- Scheduled triggers are schema/API-level and are not an active production scheduler yet.
 
 ## Chinese Summary
 
