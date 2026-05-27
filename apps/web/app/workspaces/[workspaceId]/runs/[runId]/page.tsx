@@ -75,7 +75,7 @@ export default function RunDetailPage() {
           <div className="panel p-5">
             <h2 className="font-bold">Run metrics</h2>
             <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <dt className="text-slate-500">Credits</dt><dd>{detail.run.credits_used}</dd>
+              <dt className="text-slate-500">Credits used</dt><dd>{detail.run.credits_used}</dd>
               <dt className="text-slate-500">Tool calls</dt><dd>{detail.run.tool_calls_count}</dd>
               <dt className="text-slate-500">Tokens</dt><dd>{detail.run.prompt_tokens + detail.run.completion_tokens}</dd>
               <dt className="text-slate-500">Trace ID</dt><dd className="break-all">{detail.run.trace_id}</dd>
