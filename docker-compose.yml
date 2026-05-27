@@ -15,7 +15,7 @@ services:
       - "6379:6379"
   api:
     build:
-      context: ./apps/api
+      context: ./services/api
     environment:
       DATABASE_URL: postgresql+psycopg://taskflow:taskflow@postgres:5432/taskflow
       REDIS_URL: redis://redis:6379/0

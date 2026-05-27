@@ -56,8 +56,8 @@ The run pauses at the approval gate, stores a pending approval, resumes after ap
 
 ```bash
 npm install
-pip install -r apps/api/requirements.txt
-uvicorn app.main:app --reload --app-dir apps/api
+pip install -r services/api/requirements.txt
+uvicorn app.main:app --reload --app-dir services/api
 npm run dev --workspace apps/web
 ```
 
@@ -76,7 +76,7 @@ Copy `.env.example` and set provider keys only on the backend. Missing AI keys u
 ## Testing
 
 ```bash
-pytest apps/api/app/tests
+pytest services/api/app/tests
 npm run typecheck --workspace apps/web
 npm run lint --workspace apps/web
 npm run build --workspace apps/web

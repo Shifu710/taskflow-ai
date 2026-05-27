@@ -10,8 +10,9 @@
     "build": "npm run build --workspace apps/web",
     "lint": "npm run lint --workspace apps/web",
     "typecheck": "npm run typecheck --workspace apps/web",
-    "api:dev": "uvicorn app.main:app --reload --app-dir apps/api",
-    "api:test": "pytest apps/api/app/tests"
+    "api:dev": "uvicorn app.main:app --reload --app-dir services/api",
+    "api:test": "pytest services/api/app/tests",
+    "api:lint": "ruff check services/api/app --select F"
   },
   "devDependencies": {
     "playwright": "^1.60.0"
