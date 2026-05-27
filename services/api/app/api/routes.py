@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.db.seed import DEMO_WORKFLOW_ID, DEMO_WORKSPACE_ID
 from app.db.session import get_db
 from app.models.entities import AgentRun, AgentRunStep, Approval, Tool, ToolCall, UsageLog, User, WebhookEvent, Workflow, WorkflowVersion, Workspace, WorkspaceMember
-from app.runtime.engine import create_run, execute_until_pause_or_done
+from app.runtime.engine import create_run, create_run_record, execute_until_pause_or_done
 from app.services.rbac import require_permission, role_for
 from app.services.security import create_token, hash_password, verify_password
 from app.services.tool_gateway import invoke_tool, list_manifest
@@ -187,7 +187,13 @@ def start_run(workspace_id: str, workflow_id: str, payload: RunInput, user: User
     role = require_permission(db, workspace_id, user.id, "run_workflow")
     if role == "guest" and workflow_id != DEMO_WORKFLOW_ID:
         raise HTTPException(status_code=403, detail="Guest can only run the prebuilt demo workflow")
-    run = create_run(db, workspace_id, workflow_id, user.id, payload.input)
+    if settings.taskflow_use_celery:
+        run = create_run_record(db, workspace_id, workflow_id, user.id, payload.input)
+        from app.worker import run_workflow_task
+
+        run_workflow_task.delay(run.id)
+    else:
+        run = create_run(db, workspace_id, workflow_id, user.id, payload.input)
     return {"run_id": run.id, "status": run.status}
 
 

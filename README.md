@@ -69,6 +69,8 @@ Open `http://localhost:3000`.
 docker compose up --build
 ```
 
+Docker Compose starts PostgreSQL, Redis, FastAPI, the Celery worker, and the Next.js frontend. Local non-Docker development keeps synchronous execution by default with `TASKFLOW_USE_CELERY=false`, so the guest demo remains easy to run without a worker.
+
 ## Database Migrations
 
 SQLite remains available for quick local demo mode, but PostgreSQL plus Alembic is the production data path.
@@ -95,7 +97,7 @@ npm run build --workspace apps/web
 
 - Public demo uses seeded company/product data, not live web search.
 - External writes such as webhook sending, CRM notes, and task creation are simulated in demo mode.
-- Celery worker is a planned hardening item; the current demo runtime executes synchronously to keep the portfolio flow reliable.
+- Celery/Redis worker mode is wired for Docker deployments. Local quick-demo mode executes synchronously unless `TASKFLOW_USE_CELERY=true`.
 - Langfuse is configuration-ready but does not send external traces until the optional tracing phase is implemented.
 
 ## Chinese Summary

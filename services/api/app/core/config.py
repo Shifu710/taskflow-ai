@@ -3,6 +3,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./taskflow_demo.db"
+    redis_url: str = "redis://localhost:6379/0"
+    taskflow_use_celery: bool = False
     jwt_secret: str = "dev-only-change-me"
     webhook_secret: str = "demo-webhook-secret"
     ai_provider: str = "demo-local"

@@ -28,6 +28,11 @@ FINAL_SCHEMA = {
 
 
 def create_run(db: Session, workspace_id: str, workflow_id: str, user_id: str, input_json: dict) -> AgentRun:
+    run = create_run_record(db, workspace_id, workflow_id, user_id, input_json)
+    return execute_until_pause_or_done(db, run.id, approved=False)
+
+
+def create_run_record(db: Session, workspace_id: str, workflow_id: str, user_id: str, input_json: dict) -> AgentRun:
     workflow = db.query(Workflow).filter_by(id=workflow_id, workspace_id=workspace_id).first()
     if not workflow:
         raise ValueError("Workflow not found")
@@ -44,7 +49,8 @@ def create_run(db: Session, workspace_id: str, workflow_id: str, user_id: str, i
     )
     db.add(run)
     db.commit()
-    return execute_until_pause_or_done(db, run.id, approved=False)
+    db.refresh(run)
+    return run
 
 
 def execute_until_pause_or_done(db: Session, run_id: str, approved: bool = False) -> AgentRun:
