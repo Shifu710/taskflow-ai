@@ -39,7 +39,10 @@ class Settings(BaseSettings):
         if value.startswith("postgres://"):
             return value.replace("postgres://", "postgresql+psycopg://", 1)
         if value.startswith("postgresql://") and "+psycopg" not in value:
-            return value.replace("postgresql://", "postgresql+psycopg://", 1)
+            value = value.replace("postgresql://", "postgresql+psycopg://", 1)
+        if value.startswith("postgresql") and "sslmode=" not in value:
+            separator = "&" if "?" in value else "?"
+            value = f"{value}{separator}sslmode=require"
         return value
 
 

@@ -68,8 +68,12 @@ def tool_schema(slug: str) -> tuple[dict, dict | None]:
 
 
 def seed_database(db: Session) -> None:
-    if db.query(User).filter_by(id=GUEST_USER_ID).first():
+    if db.query(Workspace).filter_by(id=DEMO_WORKSPACE_ID).first():
         return
+
+    # Recover from a partial seed where demo users exist without the demo workspace.
+    db.query(User).filter(User.id.in_([GUEST_USER_ID, DEMO_USER_ID])).delete(synchronize_session=False)
+    db.commit()
 
     guest = User(id=GUEST_USER_ID, email="guest@taskflow.ai", name="Guest Demo", password=hash_password("guest123"))
     demo = User(id=DEMO_USER_ID, email="demo@taskflow.ai", name="Demo Owner", password=hash_password("demo12345"))
